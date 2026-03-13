@@ -44,6 +44,7 @@ export default function MemberDetailPage() {
         weight: '',
         notes: ''
     });
+    const [weeklyRoutine, setWeeklyRoutine] = useState<any>(null);
     const [dietSuggestions, setDietSuggestions] = useState<any[]>([]);
     const [gymMeals, setGymMeals] = useState<any[]>([]);
     const [isSuggestingDiet, setIsSuggestingDiet] = useState(false);
@@ -75,6 +76,7 @@ export default function MemberDetailPage() {
                 fetchGymExercises();
                 fetchGymMeals();
                 fetchDietSuggestions();
+                fetchWeeklyRoutine();
             }
         }
     }, [user, isLoading, router, memberId]);
@@ -91,6 +93,23 @@ export default function MemberDetailPage() {
             }
         } catch (error) {
             console.error("Error fetching exercises", error);
+        }
+    };
+
+    const fetchWeeklyRoutine = async () => {
+        try {
+            const token = localStorage.getItem('gym_auth_token');
+            const res = await fetch('/api/gym/weekly-workout', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success) {
+                    setWeeklyRoutine(data.plan);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching weekly routine", error);
         }
     };
 
@@ -618,6 +637,36 @@ export default function MemberDetailPage() {
                                         </div>
                                     ))}
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Standard Gym Routine (Weekly) */}
+                        <div className="bg-card border border-border rounded-lg p-6">
+                            <h3 className="text-lg font-semibold mb-4">
+                                Standard Gym Routine ({hasMounted ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long' }) : '---'})
+                            </h3>
+                            
+                            {weeklyRoutine && weeklyRoutine[new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long' })]?.length > 0 ? (
+                                <div className="space-y-3">
+                                    {weeklyRoutine[new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long' })].map((workout: any, idx: number) => (
+                                        <div key={idx} className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-500 text-white">Standard</span>
+                                                        <h4 className="font-medium">{workout.name}</h4>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground mt-1">{workout.sets} sets x {workout.reps} reps {workout.weight ? `@ ${workout.weight}kg` : ''}</p>
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    Part of Weekly Plan
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground text-center py-4">No standard routine for this day.</p>
                             )}
                         </div>
 
