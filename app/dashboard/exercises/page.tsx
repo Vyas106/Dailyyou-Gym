@@ -7,6 +7,9 @@ import SidebarLayout from '../../components/SidebarLayout';
 import { expandedExerciseLibrary, ExerciseTemplate } from '@/lib/data/exercise-library';
 
 
+import ExercisesSkeleton from './ExercisesSkeleton';
+import Image from 'next/image';
+
 export default function ExercisesPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
@@ -135,8 +138,8 @@ export default function ExercisesPage() {
                 sets: newExercise.sets ? parseInt(newExercise.sets) : null,
                 reps: newExercise.reps ? parseInt(newExercise.reps) : null,
                 restTime: newExercise.restTime ? parseInt(newExercise.restTime) : null,
-                equipment: newExercise.equipment ? newExercise.equipment.split(',').map(e => e.trim()) : [],
-                targetMuscles: newExercise.targetMuscles ? newExercise.targetMuscles.split(',').map(m => m.trim()) : []
+                equipment: newExercise.equipment ? newExercise.equipment.split(',').map(e => (e as string).trim()) : [],
+                targetMuscles: newExercise.targetMuscles ? newExercise.targetMuscles.split(',').map(m => (m as string).trim()) : []
             };
 
             const res = await fetch('/api/gym-exercises', {
@@ -206,10 +209,10 @@ export default function ExercisesPage() {
                 .filter(e => selectedLibraryExercises.includes(e.name))
                 .map(e => ({
                     ...e,
-                    sets: e.sets || null,
-                    reps: e.reps || null,
-                    duration: e.duration || null,
-                    restTime: e.restTime || null,
+                    sets: (e as any).sets || null,
+                    reps: (e as any).reps || null,
+                    duration: (e as any).duration || null,
+                    restTime: (e as any).restTime || null,
                 }));
 
             const token = localStorage.getItem('gym_auth_token');
@@ -253,16 +256,8 @@ export default function ExercisesPage() {
         return matchesSearch && matchesCategory;
     });
 
-
     if (isLoading || loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading exercises...</p>
-                </div>
-            </div>
-        );
+        return <ExercisesSkeleton />;
     }
 
     return (
@@ -380,10 +375,11 @@ export default function ExercisesPage() {
                                     <div key={exercise.exerciseId} className="bg-accent/30 border border-border rounded-lg overflow-hidden hover:bg-accent/50 transition-colors">
                                         {exercise.imageUrl && (
                                             <div className="w-full h-40 overflow-hidden">
-                                                <img
+                                                <Image
                                                     src={exercise.imageUrl}
                                                     alt={exercise.name}
-                                                    className="w-full h-full object-cover"
+                                                    fill
+                                                    className="object-cover"
                                                 />
                                             </div>
                                         )}
@@ -565,10 +561,11 @@ export default function ExercisesPage() {
                                         />
                                         {imagePreview && (
                                             <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
-                                                <img
+                                                <Image
                                                     src={imagePreview}
                                                     alt="Preview"
-                                                    className="w-full h-full object-cover"
+                                                    fill
+                                                    className="object-cover"
                                                 />
                                                 <button
                                                     type="button"

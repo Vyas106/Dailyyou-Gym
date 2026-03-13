@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,13 +61,21 @@ export default function LoginPage() {
         <div className="flex h-screen w-full bg-black overflow-hidden font-sans">
             {/* Left Panel - Featured Image (50%) */}
             <div className="hidden lg:flex w-1/2 relative bg-gray-900 text-white p-12 flex-col justify-between">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-70"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90"></div>
+                <div className="absolute inset-0 z-0">
+                    <Image 
+                        src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop" 
+                        alt="Gym" 
+                        fill 
+                        className="object-cover opacity-70"
+                        priority
+                    />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
 
-                <div className="relative z-10">
+                <div className="relative z-20">
                     <Link href="/">
-                        <div className="h-12 w-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 overflow-hidden cursor-pointer hover:bg-white/20 transition-all">
-                             <img src="/icon.jpg" alt="DailyYou Gym Logo" className="h-full w-full object-cover" />
+                        <div className="h-12 w-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 overflow-hidden cursor-pointer hover:bg-white/20 transition-all relative">
+                             <Image src="/icon.jpg" alt="DailyYou Gym Logo" fill className="object-cover" />
                         </div>
                     </Link>
                 </div>

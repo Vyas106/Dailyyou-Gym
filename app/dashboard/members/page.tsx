@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import SidebarLayout from '../../components/SidebarLayout';
 
+import MembersSkeleton from './MembersSkeleton';
+
 export default function MembersPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
@@ -42,14 +44,7 @@ export default function MembersPage() {
     };
 
     if (isLoading || !user || !gymData) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
+        return <MembersSkeleton />;
     }
 
     return (
