@@ -56,7 +56,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
             return NextResponse.json({ message: 'This plan does not belong to your gym' }, { status: 403 });
         }
 
-        let exercises = planData.exercises || [];
+        let exercises = planData?.exercises || [];
         exercises = exercises.filter((ex: any) => ex.order !== exerciseOrder);
         exercises.forEach((ex: any, index: number) => {
             ex.order = index + 1;

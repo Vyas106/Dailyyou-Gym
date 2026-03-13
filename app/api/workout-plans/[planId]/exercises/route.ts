@@ -63,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pla
             return NextResponse.json({ message: 'This plan does not belong to your gym' }, { status: 403 });
         }
 
-        const exercises = planData.exercises || [];
+        const exercises = planData?.exercises || [];
         exercises.push({
             exerciseId: exercise.exerciseId,
             exerciseName: exercise.exerciseName,

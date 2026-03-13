@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         const gymData = gymDoc.data() || {};
 
         // Fetch member details
-        let membersWithDetails = [];
+        let membersWithDetails: any[] = [];
         if (gymData.members && Array.isArray(gymData.members) && gymData.members.length > 0) {
             const memberPromises = gymData.members.map(async (memberId: string) => {
                 try {

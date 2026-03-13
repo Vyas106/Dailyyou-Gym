@@ -233,7 +233,7 @@ export default function DashboardPage() {
 
                     {/* QR Display */}
                     <div className="lg:col-span-1">
-                        <QRDisplay gymId={user.gymId} gymName={gymData.name} />
+                        <QRDisplay gymId={user.gymId!} gymName={gymData.name} />
                     </div>
                 </div>
             </div>
