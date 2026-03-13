@@ -173,7 +173,8 @@ export default function Pricing() {
                             features={[
                                 "Everything in Monthly",
                                 "Priority Cloud Sync",
-                                "Custom Gym Branding",
+                                "Custom Gym Website",
+                                "yourgym.dailyyou.in Domain",
                                 "Advanced Plan Architect",
                                 "Quarterly Audits"
                             ]}
@@ -188,10 +189,11 @@ export default function Pricing() {
                             popular={true}
                             features={[
                                 "Everything in 6 Months",
+                                "Custom Gym Website",
+                                "yourgym.dailyyou.in Domain",
                                 "Dedicated Account Manager",
                                 "Custom API Access",
-                                "Beta Feature Access",
-                                "Life-time Data Backup"
+                                "Beta Feature Access"
                             ]}
                             delay={0.6}
                         />

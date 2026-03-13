@@ -44,6 +44,19 @@ export default function MemberDetailPage() {
         weight: '',
         notes: ''
     });
+    const [dietSuggestions, setDietSuggestions] = useState<any[]>([]);
+    const [gymMeals, setGymMeals] = useState<any[]>([]);
+    const [isSuggestingDiet, setIsSuggestingDiet] = useState(false);
+    const [dietForm, setDietForm] = useState({
+        mealId: '',
+        note: '',
+        isCustom: false,
+        name: '',
+        calories: '',
+        protein: '',
+        carbs: '',
+        fats: ''
+    });
 
     useEffect(() => {
         setHasMounted(true);
@@ -60,6 +73,8 @@ export default function MemberDetailPage() {
                 fetchMemberProfile();
                 fetchPlans();
                 fetchGymExercises();
+                fetchGymMeals();
+                fetchDietSuggestions();
             }
         }
     }, [user, isLoading, router, memberId]);
@@ -211,6 +226,76 @@ export default function MemberDetailPage() {
             alert('Error updating member');
         } finally {
             setUpdateLoading(false);
+        }
+    };
+
+    const fetchGymMeals = async () => {
+        try {
+            const token = localStorage.getItem('gym_auth_token');
+            const res = await fetch('/api/meals', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setGymMeals(data.meals);
+        } catch (error) {
+            console.error("Error fetching gym meals", error);
+        }
+    };
+
+    const fetchDietSuggestions = async () => {
+        try {
+            const token = localStorage.getItem('gym_auth_token');
+            const res = await fetch(`/api/members/${memberId}/diet-suggestions`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setDietSuggestions(data.suggestions);
+        } catch (error) {
+            console.error("Error fetching diet suggestions", error);
+        }
+    };
+
+    const handleSuggestDiet = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('gym_auth_token');
+            const body = {
+                mealId: dietForm.isCustom ? null : dietForm.mealId,
+                note: dietForm.note,
+                customMeal: dietForm.isCustom ? {
+                    name: dietForm.name,
+                    calories: Number(dietForm.calories),
+                    protein: Number(dietForm.protein),
+                    carbs: Number(dietForm.carbs),
+                    fats: Number(dietForm.fats)
+                } : null
+            };
+
+            const res = await fetch(`/api/members/${memberId}/diet-suggestions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success) {
+                    setIsSuggestingDiet(false);
+                    setDietForm({ mealId: '', note: '', isCustom: false, name: '', calories: '', protein: '', carbs: '', fats: '' });
+                    fetchDietSuggestions();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } else {
+                const errorData = await res.json();
+                alert('Failed to send suggestion: ' + (errorData.message || res.statusText));
+            }
+        } catch (error: any) {
+            console.error("Error suggesting diet", error);
+            alert('Error sending suggestion: ' + error.message);
         }
     };
 
@@ -668,9 +753,193 @@ export default function MemberDetailPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Diet Suggestions Section */}
+                        <div className="bg-card border border-border rounded-lg p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-semibold">Gym Diet Recommendations</h3>
+                                <button
+                                    onClick={() => setIsSuggestingDiet(true)}
+                                    className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                                >
+                                    Suggest Meal
+                                </button>
+                            </div>
+
+                            {dietSuggestions.length === 0 ? (
+                                <p className="text-muted-foreground text-center py-8 bg-accent/20 rounded-xl border border-dashed border-border">
+                                    No diet recommendations provided yet.
+                                </p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {dietSuggestions.map((suggestion) => {
+                                        const meal = suggestion.mealId ? gymMeals.find(m => m.id === suggestion.mealId) : suggestion.customMeal;
+                                        return (
+                                            <div key={suggestion.id} className="p-4 rounded-xl border border-border bg-accent/10">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h4 className="font-bold text-lg">{meal?.name || 'Unknown Meal'}</h4>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Suggested on {new Date(suggestion.createdAt).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    {suggestion.mealId ? (
+                                                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase">Library</span>
+                                                    ) : (
+                                                        <span className="text-[10px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase">Custom</span>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-4 gap-2 mb-3">
+                                                    <div className="bg-background p-2 rounded-lg text-center border border-border">
+                                                        <p className="font-bold text-sm text-primary">{meal?.calories}</p>
+                                                        <p className="text-[10px] text-muted-foreground uppercase leading-none">kcal</p>
+                                                    </div>
+                                                    <div className="bg-background p-2 rounded-lg text-center border border-border">
+                                                        <p className="font-bold text-sm">{meal?.protein}g</p>
+                                                        <p className="text-[10px] text-muted-foreground uppercase leading-none">Prot</p>
+                                                    </div>
+                                                    <div className="bg-background p-2 rounded-lg text-center border border-border">
+                                                        <p className="font-bold text-sm">{meal?.carbs}g</p>
+                                                        <p className="text-[10px] text-muted-foreground uppercase leading-none">Carb</p>
+                                                    </div>
+                                                    <div className="bg-background p-2 rounded-lg text-center border border-border">
+                                                        <p className="font-bold text-sm">{meal?.fats}g</p>
+                                                        <p className="text-[10px] text-muted-foreground uppercase leading-none">Fat</p>
+                                                    </div>
+                                                </div>
+
+                                                {suggestion.note && (
+                                                    <div className="bg-background/50 p-3 rounded-lg border border-border">
+                                                        <p className="text-xs italic text-muted-foreground">" {suggestion.note} "</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Diet Suggestion Modal */}
+            {isSuggestingDiet && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card w-full max-w-lg rounded-2xl p-6 border border-border shadow-2xl relative">
+                        <h2 className="text-xl font-bold mb-6">Suggest Meal for {memberData.name}</h2>
+                        
+                        <form onSubmit={handleSuggestDiet} className="space-y-5">
+                            <div className="flex gap-4 p-1 bg-muted rounded-xl mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setDietForm({...dietForm, isCustom: false})}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!dietForm.isCustom ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    From Library
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDietForm({...dietForm, isCustom: true})}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${dietForm.isCustom ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    Custom Meal
+                                </button>
+                            </div>
+
+                            {!dietForm.isCustom ? (
+                                <div>
+                                    <label className="text-sm font-medium block mb-2">Select Meal</label>
+                                    <div className="max-h-60 overflow-y-auto pr-2 space-y-2">
+                                        {gymMeals.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-10">No meals found in library. Add some first!</p>
+                                        ) : (
+                                            gymMeals.map(meal => (
+                                                <label 
+                                                    key={meal.id} 
+                                                    className={`block p-3 rounded-xl border-2 transition-all cursor-pointer ${dietForm.mealId === meal.id ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                                                >
+                                                    <input 
+                                                        type="radio" 
+                                                        name="meal" 
+                                                        className="hidden" 
+                                                        onChange={() => setDietForm({...dietForm, mealId: meal.id})}
+                                                    />
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="font-bold text-sm">{meal.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">{meal.calories} kcal • {meal.protein}g P</p>
+                                                    </div>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium block mb-1">Meal Name</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={dietForm.name}
+                                            onChange={e => setDietForm({...dietForm, name: e.target.value})}
+                                            className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm"
+                                            placeholder="e.g. Protein Shake with Banana"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold block mb-1 uppercase text-muted-foreground">Calories</label>
+                                            <input required type="number" value={dietForm.calories} onChange={e => setDietForm({...dietForm, calories: e.target.value})} className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-center" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold block mb-1 uppercase text-muted-foreground">Protein</label>
+                                            <input type="number" value={dietForm.protein} onChange={e => setDietForm({...dietForm, protein: e.target.value})} className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-center" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold block mb-1 uppercase text-muted-foreground">Carbs</label>
+                                            <input type="number" value={dietForm.carbs} onChange={e => setDietForm({...dietForm, carbs: e.target.value})} className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-center" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold block mb-1 uppercase text-muted-foreground">Fats</label>
+                                            <input type="number" value={dietForm.fats} onChange={e => setDietForm({...dietForm, fats: e.target.value})} className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-center" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="text-sm font-medium block mb-1">Coaching Note (Optional)</label>
+                                <textarea
+                                    value={dietForm.note}
+                                    onChange={e => setDietForm({...dietForm, note: e.target.value})}
+                                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm resize-none"
+                                    rows={2}
+                                    placeholder="Add specific instructions for this meal..."
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSuggestingDiet(false)}
+                                    className="flex-1 px-6 py-3 border border-border rounded-xl text-sm font-bold hover:bg-accent transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={dietForm.isCustom ? (!dietForm.name || !dietForm.calories) : !dietForm.mealId}
+                                    className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
+                                >
+                                    Send Suggestion
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Modal for Assigning Exercise */}
             {isAssigning && (

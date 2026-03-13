@@ -141,7 +141,7 @@ export default function DashboardPage() {
                             </svg>
                         }
                         color="orange"
-                        onClick={() => { }} // Placeholder
+                        onClick={() => router.push('/dashboard/revenue')}
                     />
                 </div>
 

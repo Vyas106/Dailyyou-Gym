@@ -150,11 +150,12 @@ export default function Home() {
                         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-[#000000] z-10" />
                         <motion.div style={{ opacity, scale }} className="w-full h-full relative">
                             <Image 
-                                src="/hero-bg.png" 
-                                alt="Luxury Gym" 
+                                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=3840&auto=format&fit=crop" 
+                                alt="Elite Gym Management" 
                                 fill 
                                 className="object-cover grayscale-[0.2]"
                                 priority 
+                                quality={100}
                             />
                         </motion.div>
                     </div>
@@ -179,7 +180,7 @@ export default function Home() {
                             </h1>
 
                             <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/60 mb-12 font-medium leading-relaxed">
-                                A high-performance operating system for modern gyms. Seamlessly connect trainers, members, and data in one cinematic ecosystem.
+                                A high-performance operating system for modern gyms. Seamlessly connect trainers, members, and data—including a <span className="text-white font-bold">Custom Gym Website</span> built for you.
                             </p>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -221,12 +222,13 @@ export default function Home() {
                                     <div className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em]">Dashboard Preview</div>
                                     <div className="w-8 h-8 rounded-lg bg-white/5" />
                                 </div>
-                                <div className="relative w-full aspect-[16/9]">
+                                <div className="relative w-full aspect-[21/9]">
                                     <Image 
-                                        src="/dash-mock.png" 
-                                        alt="Dashboard Preview" 
+                                        src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=3840&auto=format&fit=crop" 
+                                        alt="Dashboard Intelligence" 
                                         fill 
-                                        className="object-contain opacity-90 group-hover:opacity-100 transition-opacity" 
+                                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                                        quality={100}
                                     />
                                 </div>
                             </motion.div>
@@ -296,6 +298,87 @@ export default function Home() {
                         </div>
                     </div>
                 </section>
+
+                {/* Custom Website Section */}
+                <section className="py-32 relative overflow-hidden bg-black">
+                    <div className="container mx-auto px-6">
+                        <div className="relative p-1 bg-gradient-to-r from-orange-500/50 via-white/20 to-orange-500/50 rounded-[3rem]">
+                            <div className="bg-[#050505] rounded-[2.9rem] p-8 md:p-16 flex flex-col lg:flex-row items-center gap-12 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-orange-500/5 blur-[100px] rounded-full pointer-events-none" />
+                                <div className="flex-1 text-center lg:text-left relative z-10">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black uppercase tracking-widest mb-6">
+                                        Premium Benefit
+                                    </div>
+                                    <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight tracking-tighter uppercase">
+                                        GET YOUR OWN <br />
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-white">CUSTOM WEBSITE.</span>
+                                    </h2>
+                                    <p className="text-xl text-white/50 mb-10 leading-relaxed max-w-xl font-medium">
+                                        Focus on your gym, we handle the digital presence. We create a premium, SEO-optimized custom website for your gym which is <span className="text-white font-bold">fully included in your plan.</span>
+                                    </p>
+                                    <Link href="/pricing">
+                                        <button className="group px-8 py-4 bg-white text-black font-black rounded-2xl hover:bg-orange-500 hover:text-white transition-all flex items-center gap-3 uppercase tracking-tighter mx-auto lg:mx-0">
+                                            View Plans
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    </Link>
+                                </div>
+                                <div className="flex-1 relative w-full">
+                                    <div className="absolute inset-0 bg-orange-500/20 blur-[100px] rounded-full" />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        className="relative bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden backdrop-blur-3xl shadow-2xl group"
+                                    >
+                                        <div className="p-4 border-b border-white/5 bg-black/60 flex items-center justify-between">
+                                            <div className="flex gap-2">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+                                            </div>
+                                            <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10">
+                                                <span className="text-[10px] font-mono text-white/50 tracking-wider">
+                                                    yourgym.<span className="text-orange-500">dailyyou.in</span>
+                                                </span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-lg bg-white/5" />
+                                        </div>
+                                        <div className="aspect-[16/10] relative grayscale-[0.2] group-hover:grayscale-0 transition-all duration-1000">
+                                            <Image 
+                                                src="/gym_website_mockup.png" 
+                                                alt="Custom Website Preview" 
+                                                fill 
+                                                className="object-cover scale-105 group-hover:scale-100 transition-transform duration-1000"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 p-8 flex flex-col justify-end">
+                                                <div className="text-2xl font-black tracking-tighter uppercase mb-2">PULSE FITNESS</div>
+                                                <div className="text-xs font-bold text-white/60 tracking-[0.2em] uppercase">Built with DailyYou OS</div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                    
+                                    {/* Small floating elements */}
+                                    <div className="absolute -bottom-6 -left-6 bg-zinc-900 border border-white/10 p-4 rounded-2xl shadow-2xl hidden md:block backdrop-blur-xl hover:scale-105 transition-transform">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                                            <span className="text-xs font-bold text-white/80 uppercase tracking-widest">SEO Optimized</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute -top-6 -right-6 bg-orange-500 p-4 rounded-2xl shadow-2xl hidden md:block hover:scale-105 transition-transform">
+                                        <span className="text-xs font-black text-black uppercase tracking-widest">Free Hosting</span>
+                                    </div>
+                                    
+                                    <div className="absolute -right-12 bottom-1/4 bg-white/5 border border-white/10 backdrop-blur-xl p-4 rounded-2xl hidden xl:block animate-bounce-slow">
+                                        <div className="text-[10px] font-black text-orange-500 uppercase mb-1 tracking-widest">YOUR DOMAIN</div>
+                                        <div className="text-sm font-bold text-white">yourgym.dailyyou.in</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
 
                 {/* Mobile App Sync */}
                 <section id="mobile" className="py-32 relative overflow-hidden">

@@ -90,11 +90,12 @@ export default function SignUpPage() {
             <div className="hidden lg:flex w-1/2 relative bg-gray-900 text-white p-12 flex-col justify-between">
                 <div className="absolute inset-0 z-0">
                     <Image 
-                        src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070&auto=format&fit=crop" 
+                        src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=3840&auto=format&fit=crop" 
                         alt="Gym" 
                         fill 
                         className="object-cover opacity-60"
                         priority
+                        quality={100}
                     />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
