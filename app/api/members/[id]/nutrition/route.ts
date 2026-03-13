@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, auth } from '@/lib/firebaseAdmin';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION || 'ap-south-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    }
+});
+
+async function getSignedImageUrl(s3Url: string | null): Promise<string | null> {
+    if (!s3Url || !s3Url.includes('amazonaws.com')) return s3Url;
+    try {
+        const urlParts = s3Url.split('.com/');
+        if (urlParts.length < 2) return s3Url;
+        const key = decodeURIComponent(urlParts[1]);
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME || 'dailyyou',
+            Key: key,
+        });
+        return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    } catch (error) {
+        console.error('Error signing URL:', error);
+        return s3Url;
+    }
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -9,9 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const token = authHeader.split('Bearer ')[1];
-        let decodedToken;
         try {
-            decodedToken = await auth.verifyIdToken(token);
+            await auth.verifyIdToken(token);
         } catch (error) {
             console.error('Token verification failed:', error);
             return NextResponse.json({ message: 'Unauthorized: Invalid token' }, { status: 401 });
@@ -19,24 +45,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const { id: memberId } = await params;
         const { searchParams } = new URL(req.url);
-        const dateParam = searchParams.get('date');
+        const dateParam = searchParams.get('date'); // Expects YYYY-MM-DD
         const rangeParam = searchParams.get('range') || '24h';
 
-        // Simplify nutrition fetching logic
-        // Assuming meals are stored in 'meals' subcollection under user
         const mealsRef = db.collection('App_user').doc(memberId).collection('meals');
 
-        let query: FirebaseFirestore.Query = mealsRef;
         let startDate: Date;
-        let endDate: Date = new Date(); // Current time
+        let endDate: Date = new Date();
 
         if (rangeParam === '24h' && dateParam) {
-            startDate = new Date(dateParam);
-            startDate.setHours(0, 0, 0, 0);
+            // Fix: Create date from YYYY-MM-DD in LOCAL time of the server/user intent
+            const [year, month, day] = dateParam.split('-').map(Number);
+            startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
 
-            const nextDay = new Date(startDate);
-            nextDay.setDate(startDate.getDate() + 1);
-            endDate = nextDay;
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
         } else if (rangeParam === '7d') {
             startDate = new Date();
             startDate.setDate(startDate.getDate() - 7);
@@ -47,17 +70,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             startDate = new Date();
             startDate.setDate(startDate.getDate() - 30);
         } else {
-            // Default to today
             startDate = new Date();
             startDate.setHours(0, 0, 0, 0);
         }
 
-        query = query.where('createdAt', '>=', startDate.toISOString()).where('createdAt', '<', endDate.toISOString());
+        // Query using ISO strings for comparison
+        const snapshot = await mealsRef
+            .where('createdAt', '>=', startDate.toISOString())
+            .where('createdAt', '<', endDate.toISOString())
+            .get();
 
-        const snapshot = await query.get();
-        const mealsList = snapshot.docs.map(doc => ({
-            mealId: doc.id,
-            ...doc.data()
+        const mealsList = await Promise.all(snapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            const imageUrl = await getSignedImageUrl(data.imageUrl);
+            return {
+                mealId: doc.id,
+                ...data,
+                imageUrl
+            };
         }));
 
         // Calculate totals
@@ -69,14 +99,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             mealCount: acc.mealCount + 1
         }), { calories: 0, protein: 0, carbohydrates: 0, fats: 0, mealCount: 0 });
 
-        // If range > 24h, calculate averages
         if (rangeParam !== '24h') {
             const days = rangeParam === '7d' ? 7 : rangeParam === '15d' ? 15 : 30;
             totals.calories /= days;
             totals.protein /= days;
             totals.carbohydrates /= days;
             totals.fats /= days;
-            // mealCount usually stays as total count or avg? Frontend label says "Avg", keeping consistent with that.
         }
 
         return NextResponse.json({ mealsList, totals }, { status: 200 });

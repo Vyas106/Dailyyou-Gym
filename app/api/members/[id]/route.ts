@@ -110,3 +110,57 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ message: 'Error updating member', error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ message: 'Unauthorized: Missing or invalid token' }, { status: 401 });
+        }
+
+        const token = authHeader.split('Bearer ')[1];
+        const decodedToken = await auth.verifyIdToken(token);
+        const requesterId = decodedToken.uid;
+        const { id: memberId } = await params;
+
+        // Verify requester is a gym owner
+        const requesterDoc = await db.collection('App_user').doc(requesterId).get();
+        const requesterData = requesterDoc.data();
+
+        if (!requesterData?.gymId) {
+            return NextResponse.json({ message: 'You do not own a gym' }, { status: 403 });
+        }
+
+        const gymId = requesterData.gymId;
+        const gymRef = db.collection('App_user').doc('gyms').collection('gyms').doc(gymId);
+        const gymDoc = await gymRef.get();
+
+        if (!gymDoc.exists) {
+            return NextResponse.json({ message: 'Gym not found' }, { status: 404 });
+        }
+
+        // 1. Remove member from gym's members list
+        const gymData = gymDoc.data() || {};
+        const currentMembers: string[] = gymData.members || [];
+        const updatedMembers = currentMembers.filter(mid => mid !== memberId);
+
+        await gymRef.update({
+            members: updatedMembers,
+            updatedAt: new Date().toISOString()
+        });
+
+        // 2. Clear gymId, planId and joinedAt from member's profile
+        await db.collection('App_user').doc(memberId).update({
+            gymId: null,
+            planId: null,
+            joinedAt: null,
+            updatedAt: new Date().toISOString()
+        });
+
+        return NextResponse.json({ success: true, message: 'Member removed successfully' }, { status: 200 });
+
+    } catch (error: any) {
+        console.error('Error removing member:', error);
+        return NextResponse.json({ message: 'Error removing member', error: error.message }, { status: 500 });
+    }
+}

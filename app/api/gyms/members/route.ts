@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         await db.collection('App_user').doc(memberId).update({
             gymConnectionCode: null,
             gymId: gymId,
+            joinedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });
 

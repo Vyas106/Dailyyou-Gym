@@ -82,7 +82,8 @@ export default function MemberDetailPage() {
     const fetchAssignedWorkouts = async (date: Date) => {
         try {
             const token = localStorage.getItem('gym_auth_token');
-            const dateStr = date.toISOString().split('T')[0];
+            // Use local date instead of UTC
+            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             const res = await fetch(`/api/members/${memberId}/workouts?date=${dateStr}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -221,7 +222,8 @@ export default function MemberDetailPage() {
     const fetchMealsForDate = async (date: Date) => {
         try {
             const token = localStorage.getItem('gym_auth_token');
-            const dateStr = date.toISOString().split('T')[0];
+            // Use local date instead of UTC to avoid mismatch (e.g. 2am IST = previous day UTC)
+            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             const res = await fetch(`/api/members/${memberId}/nutrition?date=${dateStr}&range=24h`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -413,12 +415,38 @@ export default function MemberDetailPage() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="pt-2 border-t border-border">
-                                    <p className="text-xs text-muted-foreground mb-1">Status</p>
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
-                                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                        Active
-                                    </span>
+                                <div className="pt-2 border-t border-border flex flex-col gap-3">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-1">Status</p>
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            Active
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm(`Are you sure you want to remove ${memberData.name} from your gym? They will lose access to assigned workouts.`)) {
+                                                try {
+                                                    const token = localStorage.getItem('gym_auth_token');
+                                                    const res = await fetch(`/api/members/${memberId}`, {
+                                                        method: 'DELETE',
+                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                    });
+                                                    if (res.ok) {
+                                                        router.push('/dashboard/members');
+                                                    } else {
+                                                        alert('Failed to remove member');
+                                                    }
+                                                } catch (error) {
+                                                    console.error("Error removing member", error);
+                                                }
+                                            }
+                                        }}
+                                        className="w-full py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 border border-red-500/20 rounded-lg transition-colors mt-2"
+                                    >
+                                        Remove Member from Gym
+                                    </button>
                                 </div>
                             </div>
                         </div>

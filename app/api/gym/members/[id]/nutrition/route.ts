@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, auth } from '@/lib/firebaseAdmin';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id: memberId } = await params;
+
         const authHeader = req.headers.get('authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -10,7 +12,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         const token = authHeader.split('Bearer ')[1];
         const decodedToken = await auth.verifyIdToken(token);
         const gymOwnerId = decodedToken.uid;
-        const memberId = params.id;
 
         const { searchParams } = new URL(req.url);
         const date = searchParams.get('date');
@@ -103,13 +104,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             totals.fats = totals.fats / adjustedDivisor;
             totals.isAverage = true;
         }
-
-        // Fetch Latest Progress (Weight) - Optional but good for UI
-        // Assuming 'progress' subcollection exists, logic similar to 'meals'
-        // For now, skip or implement if needed. 
-        // GymController fetched it.
-        let latestProgress = null;
-        // implementation for progress reserved for later if needed.
 
         return NextResponse.json({
             memberId,

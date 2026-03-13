@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import SidebarLayout from '../../components/SidebarLayout';
+import { expandedExerciseLibrary, ExerciseTemplate } from '@/lib/data/exercise-library';
+
 
 export default function ExercisesPage() {
     const { user, isLoading } = useAuth();
@@ -28,6 +30,14 @@ export default function ExercisesPage() {
         targetMuscles: '',
         imageUrl: ''
     });
+
+    // New library states
+    const [showLibraryModal, setShowLibraryModal] = useState(false);
+    const [selectedLibraryExercises, setSelectedLibraryExercises] = useState<string[]>([]);
+    const [importing, setImporting] = useState(false);
+    const [librarySearch, setLibrarySearch] = useState('');
+    const [libraryCategory, setLibraryCategory] = useState('All');
+
 
     useEffect(() => {
         if (!isLoading) {
@@ -187,6 +197,63 @@ export default function ExercisesPage() {
         }
     };
 
+    const handleImportSelected = async () => {
+        if (selectedLibraryExercises.length === 0) return;
+
+        try {
+            setImporting(true);
+            const exercisesToImport = expandedExerciseLibrary
+                .filter(e => selectedLibraryExercises.includes(e.name))
+                .map(e => ({
+                    ...e,
+                    sets: e.sets || null,
+                    reps: e.reps || null,
+                    duration: e.duration || null,
+                    restTime: e.restTime || null,
+                }));
+
+            const token = localStorage.getItem('gym_auth_token');
+            const res = await fetch('/api/gym-exercises/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ exercises: exercisesToImport })
+            });
+
+            if (res.ok) {
+                setShowLibraryModal(false);
+                setSelectedLibraryExercises([]);
+                fetchExercises();
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Failed to import exercises');
+            }
+        } catch (error) {
+            console.error("Error importing exercises", error);
+            alert('Error importing exercises');
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const toggleLibrarySelection = (name: string) => {
+        setSelectedLibraryExercises(prev =>
+            prev.includes(name)
+                ? prev.filter(n => n !== name)
+                : [...prev, name]
+        );
+    };
+
+    const filteredLibrary = expandedExerciseLibrary.filter(e => {
+        const matchesSearch = e.name.toLowerCase().includes(librarySearch.toLowerCase()) ||
+            e.targetMuscles.some(m => m.toLowerCase().includes(librarySearch.toLowerCase()));
+        const matchesCategory = libraryCategory === 'All' || e.category === libraryCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+
     if (isLoading || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -210,15 +277,27 @@ export default function ExercisesPage() {
                                 Manage your gym's exercise collection
                             </p>
                         </div>
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 font-medium transition-opacity flex items-center gap-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Exercise
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowLibraryModal(true)}
+                                className="px-6 py-3 bg-accent text-accent-foreground rounded-md hover:bg-accent/80 font-medium transition-colors flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                Explore Library
+                            </button>
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 font-medium transition-opacity flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Exercise
+                            </button>
+                        </div>
+
                     </div>
                 </div>
 
@@ -527,7 +606,138 @@ export default function ExercisesPage() {
                         </div>
                     </div>
                 )}
+                {/* Exercise Library Modal */}
+                {showLibraryModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-card border border-border rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
+                            <div className="p-6 border-b border-border flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-bold">Populate From Library</h2>
+                                    <p className="text-sm text-muted-foreground">Select popular exercises to add to your gym's collection</p>
+                                </div>
+                                <button onClick={() => setShowLibraryModal(false)} className="p-2 hover:bg-accent rounded">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="p-6 border-b border-border flex flex-wrap gap-4">
+                                <div className="flex-1 min-w-[200px]">
+                                    <input
+                                        type="text"
+                                        placeholder="Search exercises or muscles..."
+                                        value={librarySearch}
+                                        onChange={(e) => setLibrarySearch(e.target.value)}
+                                        className="w-full px-4 py-2 bg-background border border-border rounded-md"
+                                    />
+                                </div>
+                                <select
+                                    value={libraryCategory}
+                                    onChange={(e) => setLibraryCategory(e.target.value)}
+                                    className="px-4 py-2 bg-background border border-border rounded-md"
+                                >
+                                    <option value="All">All Categories</option>
+                                    <option value="Strength">Strength</option>
+                                    <option value="Cardio">Cardio</option>
+                                    <option value="Flexibility">Flexibility</option>
+                                    <option value="Balance">Balance</option>
+                                    <option value="General">General</option>
+                                </select>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setSelectedLibraryExercises(filteredLibrary.map(e => e.name))}
+                                        className="text-sm text-primary hover:underline"
+                                    >
+                                        Select All {filteredLibrary.length}
+                                    </button>
+                                    <span className="text-muted-foreground">|</span>
+                                    <button
+                                        onClick={() => setSelectedLibraryExercises([])}
+                                        className="text-sm text-muted-foreground hover:underline"
+                                    >
+                                        Deselect All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {filteredLibrary.map((exercise) => {
+                                        const isSelected = selectedLibraryExercises.includes(exercise.name);
+                                        const alreadyExists = exercises.some(ex => ex.name.toLowerCase() === exercise.name.toLowerCase());
+
+                                        return (
+                                            <div
+                                                key={exercise.name}
+                                                onClick={() => !alreadyExists && toggleLibrarySelection(exercise.name)}
+                                                className={`relative p-4 border rounded-lg transition-all cursor-pointer group ${isSelected
+                                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                        : alreadyExists
+                                                            ? 'border-muted bg-muted/20 opacity-60 cursor-not-allowed'
+                                                            : 'border-border hover:border-primary/50 hover:bg-accent/30'
+                                                    }`}
+                                            >
+                                                {alreadyExists && (
+                                                    <span className="absolute top-2 right-2 px-2 py-0.5 text-[10px] bg-muted text-muted-foreground rounded-full">
+                                                        Added
+                                                    </span>
+                                                )}
+                                                {isSelected && !alreadyExists && (
+                                                    <div className="absolute top-2 right-2 text-primary">
+                                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                <h3 className="font-bold mb-1 pr-8">{exercise.name}</h3>
+                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase font-semibold">
+                                                        {exercise.category}
+                                                    </span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 uppercase font-semibold">
+                                                        {exercise.difficulty}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                                    {exercise.description}
+                                                </p>
+                                                <div className="flex flex-wrap gap-1 mt-auto">
+                                                    {exercise.targetMuscles.slice(0, 3).map(m => (
+                                                        <span key={m} className="text-[9px] text-muted-foreground">#{m}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-border flex items-center justify-between sticky bottom-0 bg-card">
+                                <p className="text-sm font-medium">
+                                    {selectedLibraryExercises.length} exercises selected
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowLibraryModal(false)}
+                                        className="px-6 py-2 bg-accent text-foreground rounded-md hover:bg-accent/80 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleImportSelected}
+                                        disabled={selectedLibraryExercises.length === 0 || importing}
+                                        className="px-8 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 font-bold"
+                                    >
+                                        {importing ? 'Importing...' : `Import Selected (${selectedLibraryExercises.length})`}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </SidebarLayout>
+
     );
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
 import Input from '../components/Input';
+import QRDisplay from '../../components/dashboard/QRDisplay';
 
 export default function DashboardPage() {
     const { user, isLoading } = useAuth();
@@ -149,84 +150,90 @@ export default function DashboardPage() {
                     />
                 </div>
 
-                {/* Main Content Grid */}
-                {/* ... (rest of the content) ... */}
-
-                <div className="lg:col-span-1">
-                    <div className="bg-card border border-border rounded-lg p-6">
-                        {/* ... */}
-                        <form onSubmit={handleAddMember} className="space-y-4">
-                            <Input
-                                id="add-member-input"
-                                label="Member Connection Code"
-                                // ...
-                                placeholder="Enter 6-digit code"
-                                value={connectionCode}
-                                onChange={e => setConnectionCode(e.target.value)}
-                                maxLength={6}
-                                className="text-center font-mono text-lg tracking-widest uppercase"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Ask the member to find this code in their mobile app under Progress → Connect to Gym.
-                            </p>
-
-                            {addMemberMessage && (
-                                <div className={`p-3 rounded-lg text-sm ${addMemberMessage.startsWith('Error') ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-400'}`}>
-                                    {addMemberMessage}
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={!connectionCode || isAdding}
-                                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50 font-medium transition-opacity"
-                            >
-                                {isAdding ? 'Adding...' : 'Add Member'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                {/* Gym Overview Card */}
-                <div className="lg:col-span-2">
-                    <div className="bg-card border border-border rounded-lg p-6">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Gym Overview
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <svg className="w-5 h-5 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Gym Overview Card */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-card border border-border rounded-xl p-8 h-full">
+                            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                                <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
-                                <div>
-                                    <p className="text-sm font-medium">{gymData.name}</p>
-                                    <p className="text-sm text-muted-foreground">{gymData.address}</p>
+                                Gym Overview
+                            </h3>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="space-y-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white">{gymData.name}</p>
+                                            <p className="text-sm text-gray-400 leading-relaxed mt-1">{gymData.address}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white">Contact Support</p>
+                                            <p className="text-sm text-gray-400 mt-1">{gymData.contactNumber}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white">Working Days</p>
+                                            <p className="text-sm text-gray-400 mt-1">
+                                                {Array.isArray(gymData.workingDays) ? gymData.workingDays.join(', ') : gymData.workingDays}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <svg className="w-5 h-5 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                </svg>
-                                <div>
-                                    <p className="text-sm font-medium">Contact</p>
-                                    <p className="text-sm text-muted-foreground">{gymData.contactNumber}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <svg className="w-5 h-5 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <div>
-                                    <p className="text-sm font-medium">Working Days</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {Array.isArray(gymData.workingDays) ? gymData.workingDays.join(', ') : gymData.workingDays}
-                                    </p>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Quick Link Setup</h4>
+                                    <form onSubmit={handleAddMember} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label htmlFor="add-member-input" className="text-xs font-bold text-gray-500 uppercase">Manual OTP Connection</label>
+                                            <Input
+                                                id="add-member-input"
+                                                placeholder="6-Digit OTP"
+                                                value={connectionCode}
+                                                onChange={e => setConnectionCode(e.target.value)}
+                                                maxLength={6}
+                                                className="h-12 bg-white/5 border-white/10 text-center font-mono text-xl tracking-[0.5em] uppercase"
+                                            />
+                                        </div>
+                                        {addMemberMessage && (
+                                            <div className={`p-3 rounded-lg text-sm ${addMemberMessage.startsWith('Error') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
+                                                {addMemberMessage}
+                                            </div>
+                                        )}
+                                        <button
+                                            type="submit"
+                                            disabled={!connectionCode || isAdding}
+                                            className="w-full h-12 bg-white text-black rounded-lg hover:bg-white/90 disabled:opacity-50 font-bold transition-all"
+                                        >
+                                            {isAdding ? 'Adding...' : 'Connect Member'}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* QR Display */}
+                    <div className="lg:col-span-1">
+                        <QRDisplay gymId={user.gymId} gymName={gymData.name} />
                     </div>
                 </div>
             </div>

@@ -17,7 +17,7 @@ export default function Button({
     const baseStyles = 'px-6 py-3 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2';
 
     const variants = {
-        primary: 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white hover:shadow-[var(--shadow-glow)] hover:scale-[1.02] active:scale-[0.98]',
+        primary: 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-[var(--primary-foreground)] hover:shadow-[var(--shadow-glow)] hover:scale-[1.02] active:scale-[0.98]',
         secondary: 'glass text-white hover:bg-white/10 border border-white/20',
         ghost: 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/5',
     };
@@ -30,7 +30,7 @@ export default function Button({
         >
             {isLoading ? (
                 <>
-                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    <span className="inline-block w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin"></span>
                     Loading...
                 </>
             ) : (

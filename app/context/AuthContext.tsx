@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../../lib/firebase';
 import {
@@ -35,13 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    // Skip the next onAuthStateChanged profile fetch (used during signup to avoid race condition)
+    const skipNextAuthCheck = useRef(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                // During signup, skip this check — signup() sets user directly
+                if (skipNextAuthCheck.current) {
+                    skipNextAuthCheck.current = false;
+                    setIsLoading(false);
+                    return;
+                }
+
                 try {
                     const token = await firebaseUser.getIdToken();
-                    // Fetch user profile from our API
                     const res = await fetch('/api/auth/me', {
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -50,14 +58,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                     if (res.ok) {
                         const data = await res.json();
-                        setUser({ ...data.user, token });
+                        // Map userId from API to id for frontend consistency
+                        setUser({
+                            id: data.user.userId || data.user.id,
+                            name: data.user.name,
+                            email: data.user.email,
+                            gymId: data.user.gymId,
+                            role: data.user.role,
+                            token
+                        });
+                        localStorage.setItem('gym_auth_token', token);
+                    } else if (res.status === 404) {
+                        // Profile not found — user exists in Firebase Auth but not in Firestore.
+                        // This can happen if signup was interrupted or user was created externally.
+                        console.warn('User profile not found in database. Redirecting to create profile.');
+                        // Set minimal user so the app can redirect to gym creation or setup
+                        setUser({
+                            id: firebaseUser.uid,
+                            name: firebaseUser.displayName || '',
+                            email: firebaseUser.email || '',
+                            token
+                        });
                         localStorage.setItem('gym_auth_token', token);
                     } else {
-                        // Profile might not exist yet if just signed up (handled in signup)
-                        // Or error fetching.
-                        console.error('Failed to fetch user profile');
-                        // Don't sign out automatically here, maybe retry or let UI handle?
-                        // For now, minimal handling.
+                        console.error('Failed to fetch user profile, status:', res.status);
                     }
                 } catch (error) {
                     console.error('Error fetching user profile', error);
@@ -86,6 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signup = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
         try {
+            // Tell onAuthStateChanged to skip the next trigger (avoid race condition)
+            skipNextAuthCheck.current = true;
+
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const token = await userCredential.user.getIdToken();
 
@@ -101,24 +128,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (res.ok) {
                 const data = await res.json();
-                // We could set user here, but onAuthStateChanged will also trigger
-                // However, onAuthStateChanged might fire before profile is created.
-                // It's safer to wait for profile creation.
-                // But onAuthStateChanged fires immediately on createUser...
-                // So the first fetch api/auth/me might fail (404).
-
-                // Let's manually set user to ensure immediate feedback?
-                // actually, api/auth/me checks DB. If DB write is slow, it might fail.
-                // But await fetch('/api/auth/register') ensures DB write is done (mostly).
+                // Set user directly from the register response — no race condition
+                setUser({
+                    id: data.user.userId || userCredential.user.uid,
+                    name: data.user.name || name,
+                    email: data.user.email || email,
+                    gymId: data.user.gymId,
+                    role: data.user.role,
+                    token
+                });
+                localStorage.setItem('gym_auth_token', token);
                 return { success: true };
             } else {
                 console.error("Failed to create profile");
-                // Cleanup auth user?
+                skipNextAuthCheck.current = false;
                 await userCredential.user.delete();
                 return { success: false, error: "Failed to create user profile" };
             }
         } catch (error: any) {
             console.error("Signup error", error);
+            skipNextAuthCheck.current = false;
             let errorMessage = "An error occurred during signup.";
             if (error.code === 'auth/email-already-in-use') {
                 errorMessage = "This email is already in use.";
